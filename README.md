@@ -236,15 +236,8 @@ SecurityEvent
 
 ## Step 15: Deprovision resources
 - Look for "Resource groups" -> name of resource group
--	Key in the name of the resource group (Honeypot-RG) to verify removal of resources
+-	Copy and paste the name  of the resource group (Honeypot-RG) to verify removal of resources
 -	Select the Apply force delete for selected Virtual machines and Virtual machine scale sets box
 -	Click Delete
-
-![](images/S11B.png)
-
-## Step 12A: Create custom geolocation log in Log Analytics Workspace.
-- This log will use IP information to give us specific geolocation to our create map down the line.
-- Search and click Log Analytics Workspace > law-honeypot1 > custom logs > + Add custom log
-- We need to upload a sample log to “train” log analytics on what to look for.
 
 ![](Images/22_DeleteResourceGroup.png)
