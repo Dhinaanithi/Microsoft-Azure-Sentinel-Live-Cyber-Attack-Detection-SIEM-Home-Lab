@@ -1,167 +1,242 @@
-![](images/Azurelogo.jpeg)
+# Microsoft-Azure-Sentinel-Live-CyberAttack-Detection-SIEM-Home-Lab
+### Description:
+### Welcome to the Azure Sentinel Honeypot Homelab walkthrough!
+In this guide, we’ll show you how to build and use a fun and educational cybersecurity lab using Microsoft Azure Sentinel. A honeypot is a fake system set up to attract hackers, so we can watch how they try to attack. It helps us learn about their methods and threats. A SIEM (Security Information and Event Management) is a tool that collects and analyzes security data to help detect and respond to threats in real time. Azure Sentinel is Microsoft’s cloud-based SIEM. It lets us monitor security activity, find threats, and respond automatically. With this lab, you’ll see real attacks from around the world and watch them appear on a live map. It’s a hands-on way to explore the exciting world of cybersecurity!
 
-# SIEM TUTORIAL | Microsoft Sentinel Map with LIVE CYBER ATTACKS (put this on your resume)
 ### Learning Objectives:
-1. Provisioning and deprovisioning virtual environments within Azure.
-2. Third-party API calls.
-3. Security Information and Event Management - log anaylyis and visualization. 
-> NOTE: Since we will utilize RDP you will need a Windows host machine - a Windows virtual machine will also work.
-
-
-
-
-### Technologies and Protocols:
-* Microsft Azure - a cloud computing service operated by Microsoft for application management via Microsoft-managed data centers
-* Services within Azure: Log Analytics Workspace and Sentinel (Mircosoft's SIEM)
-* Powershell 
-* Remote desktop protocol
+* Setting up and rolling out various Azure components including Virtual Machines (VMs), Log Analytics Workspaces, and Azure Sentinel
+*	Competence and experience with Microsoft Azure Sentinel, a SIEM (Security Information and Event Management) Log Management Tool
+*	Using KQL to query logs
+*	Learn how to read the Security Event Logs in Windows
+*	Utilize Workbooks (World Map) to make an interactive map showing attack statistics
  
-### Overview:
-![](images/azure.png)
+### Utilities Used:
+*	Microsoft Sentinel (SIEM)
+*	Workbook
+*	Watchlist
+*	Log Analytic Workspace
+*	Microsoft Defender for Cloud
+*	Virtual Machines
+*	Remote Desktop
+*	Event Viewer
+*	Firewalls
 
-> Step-by-step overview of lab:
-1. Create Azure subscription (FREE $200 credits)
-2. Create virtual machine in Azure (honeypot-vm) > turn firewalls off (making it vulnerable to brute force attacks) 
-3. Use a Powershell script to extract  IP of attackers > feed IP into third party API and return back to honeypot-vm specific location information.
-4.  Create log repository in Azure (Log Analytics Workspace) - this will ingest our logs from honeypot-vm
-5. Set up Sentinel - Microsoft’s cloud native SIEM
-6. Use data from SIEM to map out attacker information and magnitude 
+### Environments Used
+*	Microsoft Azure
+*	Windows 10 (22H2)
+### Links
+* Microsoft Azure Free Trial: [Azure](https://azure.microsoft.com/en-us/free/ "Azure")
 
-## Step 1: Create FREE Azure account: [Azure](https://azure.microsoft.com/en-us/free/ "Azure")
-- Click on “Go to the Azure Portal” or go to `portal.azure.com` once you create your account.
 
-![](images/S1.png)
+## Step 1: Create a Microsoft Azure Account:  [Azure](https://azure.microsoft.com/en-us/free/ "Azure")
+- Microsoft offers $200 in Azure credit for 30 days when you initially sign up.
+- Click on “Go to the Azure Portal” or go to portal.azure.com once you create your account.
 
-## Step 2: Create our honey pot virtual machine
-- In the search bar of the “Quickstart Center” page > search and click virtual machine 
+![](Images/1_AzureFreeAccountCreation.png)
+
+## Step 2: Step 2: Create our honey pot virtual machine
+- In the search bar of the “Quickstart Center” page > search and click virtual machine
 - This will be the honey pot virtual machine made to entice attackers from all over the world
+  
+![](Images/2_VirtualMachine.png)
 
-![](images/S2.png)
-
-## Step 3: On the “virtual machines” page click Create > Azure virtual machine 
+## Step 3: On the “virtual machines” page click Create > Azure virtual machine
 - Edit the virtual machine as follows:
-- Click create new under resource group and name it honeypotlab (this resource group is a logical grouping of similar resources)
-- Name the virtual machine: honeypot-vm
-- Under region select: (US) East US 2 
-- Under Image select: Windows 10 pro, version 21H2 - Gen2
-- Availability zone: Zones 2 (**screenshot is incorrect; choose Zones 2**)
-- Under size: Standard_D2as_v4 - 2 vcpus, 8 GiB memory
-- Create a username and password - **don’t forget credentials**
-- Finally, check confirm box - leaving the rest in their default options  
-
-![](images/S3.png)
+- Click create a new resource group and name it Honeypot-RG (this resource group is a logical grouping of similar resources)
+-	Name the virtual machine: My-Virtual-Machine
+-	Under region select: (US) East US 2
+-	Under Image select: Windows 10 pro, version 22H2 - Gen2
+-	Availability zone: Zones 1
+-	Size: Standard_E2s_v3 - 2 vcpus, 16 GiB memory
+-	Create a username and password - don’t forget credentials
+-	Finally, check the confirmation box - leaving the rest in their default options
+  
+![](Images/3_FillVirtualMachineDetails.png)
 
 ## Step 4: Click > Next: Disk but leave it as is, click to continue to Networking
--  Under *NIC network security group* select > Advance and under *Configure network security group* select Create new
-- You should see a default rule (something like 1000: default-allow-rdp), click the three dots to the right of it and **remove** it.
-- Select *Add an inbound rule* 
-- Match the settings of the new rule as follows: 
-- Set *Destination port ranges*: * 
-- Priority: 100
-- Name: DANGER_ANY_INBOUND
-- Leave the rest of the settings as default
-- Click Add > OK > Review + create - wait a bit to load and click Create
+-  Click create new under Virtual Network and name it My-Virtual-Network
+- Enable the check box for Delete public IP and NIC when VM is deleted
+- Click Next: Management -> Click Next: Monitoring
+- Disable Boot diagnostics. Then click Review + Create
 
-![](images/S4.png)
+![](Images/4_FillNetworkDetails.png)
 
-> The point of this new firewall rule is to allow any traffic from anywhere.  This will make our virtual machine very discoverable. 
+## Step 5: Go to Resource Groups -> Honeypot-RG -> My-Virtual-Machine-nsg
+- Under Inbound Security Rules, you should see a default rule (RDP), click the three dots to the right of it and remove it. 
+- Select Add an inbound rule
+-	Match the settings of the new rule as follows:
+-	Set Destination port ranges: *
+-	Priority: 100
+-	Name: DANGER_ANY_INBOUND
+-	Leave the rest of the settings as default
+-	Click Add > OK > Review + create - wait a bit to load and click Create
 
-## Step 5: Create Log Analytics workspace
-- As we wait for our vm to deploy, go back to the search bar and search and click *Log Analytics workspaces*
+![](Images/5_CreateInboundRule.png)
 
-![](images/S5%20.png)
+## Step 6: Log into VM through host machine
+- Through the search bar, find our My-Virtual-Machine > copy the Public IP address (highlighted here on the right)
+![](Images/6_GetPublicIPAddress.png)
+- On your Windows machine search and open Remote Desktop Connection
+-	Paste your Azure IP into Computer
+-	Then, enter your credentials we created for our Azure VM in Step 3, click OK.
+-	Accept the certificate warning
+-	You should be logged into the VM when you see “Remote Desktop Connection” at the top of the screen. 
+-	Click NO to all privacy settings and Accept
+-	Set up Edge.
 
-> The purpose  of this workspace is to ingest logs from our vm. Additionally, we will create our own custom logs that will contain geographic information on who is attacking us. Later, our MS SIEM will feed logs into here.
+![](Images/7_RemoteDesktopConnection.png)
 
-- Select the blue Create log analytics workspace button
-- Under the Basics tab:
-- Resource source group: honeypot—lab
-- Name: law-honeypot1
-- Region: West US 2 (**screenshot is incorrect; choose West US 2**)
-- Click Review + Create and click Create
+## Step 7: Enter invalid login credentials and observe the logs
+- Enter invalid credentials to generate a log. 
 
-## Step 6A: Enable log collection from vm to log workspace
-- Back in the search bar search and click *Microsoft Defender for Cloud*
-- Once on the dashboard click > Environment Settings > (through the drop down menus) > law-honeypot1
+![](Images/8_EnterWrongLoginCredentials.png)
 
-![](images/S6A.png)
+-	Search and click Event Viewer
+-	Click Windows Logs > Security and find the Audit Failure log (our failed login attempt; if you don’t see it at first filter current log by “Audit Failure” found to the left)
+-	The Source Network Address will represent the attacker’s IP address.
 
-## Step 6B: Under law-honeypot1 select *Defender Plans* and enable *Servers* ON and *SQL servers on machines* OFF. With *Cloud Security Posture Management* ON. Hit save.
-- Under *Data Collection* tab select *All Events*. Hit save.
+![](Images/9_EventViewer.png)
 
-![](images/S6B.png)
+## Step 8: Turn off firewall to make VM more susceptible to attack
+- Open command prompt on your host machine and try to ping the Azure VM - it shouldn’t work!
+-	Search and open wf.msc on Azure VM - remember to keep an eye on VM IP at the very top to confirm you’re in the VM and NOT in on your host to avoid confusion.
+-	Click Windows Defender Firewall Properties near the middle of the page
+-	Under the Domain Profile > Firewall state: OFF
+-	Under Private Profile > Firewall state: OFF
+-	Under Public Profile > Firewall state: OFF
+-	Try to ping VM again from your host machine - this should now work!
 
-## Step 7: connect Log Analytics workspace to our vm
-- On the search bar select Log Analytics workspace
-- Select law-honeypot1 > Virtual Machines > honeypot-vm
-- Click **connect**, after clicking honeypot-vm
-- It will take some time to successfully connect; you should get a message confirming connection.
+![](Images/10_TurnOffFirewall.png)
 
-![](images/S7.png)
+## Step 9 : Provisioning a Log Analytics Workspace 
+- Search and click "Log Analytics Workspaces"
+-	Click on Create Log Analytics workspace
+-	Select the resource group that we created earlier (Honeypot-RG)
+-	Give it the name of your choice: Honeypot-LAW.
+-	Add to the same region (East US 3)
+-	Select Review + Create
 
-## Step 8: Add Microsoft Sentinel to our workspace 
-- In search bar find **Microsoft Sentinel**
-- Click Create Microsoft Sentinel > select law-honeypot1 > Add
-- This will also take some time
+![](Images/11_CreateLogAnalyticsWorkspace.png)
 
-![](images/S8.png)
+## Step 10: Creating a connection between VM and Log Analytics Workspace
+- Search and click “Microsoft Sentinel”
+- Goto Content management -> Content Hub and search for “Windows Security Event”
+- Select the checkbox and click Install
 
-## Step 9A: Log into vm through host machine
-- Through the search bar, find our honeypot-vm > copy the Public IP address (highlighted here on the right)
+![](Images/12_InstalWindowsSecurityEvent.png)
 
-![](images/S9A.png)
+-	Once installed, then click Manage
+-	Select the checkbox for Windows Security Events via AMA
+-	Then click on Open Connector Page
 
-## Step 9B: RDP from host Windows machine
-- On your Windows machine (Windows vm will also work) search and open *Remote Desktop Connection*
-- Paste your Azure IP into *Computer*
-- Before connecting, click Display and scale down display configuration for easier viewing
-- Click connect
-- In the *Enter your credentials* window click more choices > Use a different account 
-- Enter invalid credentials tin order to generate a log for later viewing.
-- Then, enter your credentials we created for our Azure vm in Step 3, click OK.
-- Accept the certificate warning
-- You should be logged into the vm when you see “Remote Desktop Connection” at the top of the screen.
+![](Images/13_ViewWindowsSecurityEvent.png)
 
-![](images/S9B.png)
+- Click on Create data collection rule
+-	Give it the name of your choice: My-DCR
+-	Select the resource group that we created earlier (Honeypot-RG)
+-	Click Next: Resources
+-	Select and expand Azure subscription1 -> Honeypot-RG -> My-Virtual-Machine
+-	Click next and click Review + Create
 
-## Step 10A: Set up vm and explore 
-- Click NO to all privacy settings and Accept
-- Set up Edge
-- Search and click *Event Viewer*
-- Click Windows Logs > Security and find the Audit Failure log (our failed login attempt; if you don’t see it at first filter current log by “Audit Failure” found to the left)
+![](Images/14_CreateCollectionRule.png)
 
-![](images/S10A.png)
+## Step 11: Query + Extract Fields from Custom Log
+- Navigate to the newly established workspace (honeypot-law) in Log Analytics Workspaces -> Logs
+-	We then can run a query (KQL) and extract the different data filtering by different fields such as username, country, latitude, longitude, destination host, etc.
+-	Observe some of your VM logs:
+  
+```kql
+SecurityEvent
+| where EventID == 4625
+| where TimeGenerated > ago(5m)
+| project TimeGenerated, Account, Computer, EventID, Activity, IpAddress
+```
 
-> The Source Network Address will represent the attacker’s IPs and eventually where on Earth they are attacking us!
-> But in order to do this we need to send this network address to a third party API… but more on that later.
+![](Images/15_KQL.png)
 
-## Step 10B: Turn off firewall to make vm more susceptible to attack 
-- Open command prompt on your **host** machine and try to ping the Azure vm - it shouldn’t work!
-- Search and open wf.msc on Azure vm - *remember* to keep an eye on vm IP at the very top to confirm you’re in the vm and NOT in on your host to avoid confusion.
-- Click Windows Defender Firewall Properties near the middle of the page
-- Under the Domain Profile > Firewall state: OFF
-- Under Private Profile > Firewall state: OFF
-- Under Public Profile > Firewall state: OFF
-- Try to ping vm again from your **host** machine - this should now work!
+> Kusto Query Language (KQL) is used to query and extract logs from data stored in Azure Log Analytics or Azure Data Explorer. KQL is a powerful and expressive query language that allows you to perform advanced data analysis, filtering, aggregation, and visualization. With some practice composing questions and simple instructions, the language is meant to be simple to read and use.
 
-![](images/S10B.png)
+## Step 12: Create a Watchlist to get the location from an IP address 
+- Search and click Microsoft Sentinel
+-	Goto Configuration -> Watchlist -> Create
+-	Give the name and Alias as “geoip”
+-	Then click Next: Source
 
-## Step 11A: Retrieve Powershell script: [Script](https://github.com/joshmadakor1/Sentinel-Lab/blob/main/Custom_Security_Log_Exporter.ps1 "Script")
-- Open Powershell ISE
-- For convenience you can copy/paste the code into a new ps1 file and save it to the desktop of the **honeypot-vm** (remember to see vm IP at the top)
-- You will also need an API key, get here: [API key](https://ipgeolocation.io/ "API key")
-- Create an account and log in
-- Copy and paste *your* API key in your Powershell script `$API_KEY = “_your API key_”`
-- Save file.
+![](Images/16_CreateWatchlist.png)
 
-![](images/S11A.png)
+-	Browse and upload “geoip-summarized.csv” file (which I got it from Josh Madakor’s YouTube channel)
+-	Then click Next: Review + Create
+
+![](Images/17_UploadGeioipSummarized.png)
+
+## Step 13 : Set up our map within Microsoft Sentinel
+- Next, we will map out our logs within Sentinel with the extracted data - to see where in the world our VM is being attacked from.
+-	Search and click Microsoft Sentinel > choose Honeypot-LAW and under Threat management choose Workbooks > click + Add workbook
+-	Click edit > click the “ … “ on the right side on the screen and remove the two widgets.
+
+![](Images/18_CreateWorkbook.png)
+
+-	Click Add > Add query and paste the following into the query:
+
+  ```
+{
+	"type": 3,
+	"content": {
+	"version": "KqlItem/1.0",
+	"query": "let GeoIPDB_FULL = _GetWatchlist(\"geoip\");\nlet WindowsEvents = SecurityEvent;\nWindowsEvents | where EventID == 4625\n| order by TimeGenerated desc\n| evaluate ipv4_lookup(GeoIPDB_FULL, IpAddress, network)\n| summarize FailureCount = count() by IpAddress, latitude, longitude, cityname, countryname\n| project FailureCount, AttackerIp = IpAddress, latitude, longitude, city = cityname, country = countryname,\nfriendly_location = strcat(cityname, \" (\", countryname, \")\");",
+	"size": 3,
+	"timeContext": {
+		"durationMs": 2592000000
+	},
+	"queryType": 0,
+	"resourceType": "microsoft.operationalinsights/workspaces",
+	"visualization": "map",
+	"mapSettings": {
+		"locInfo": "LatLong",
+		"locInfoColumn": "countryname",
+		"latitude": "latitude",
+		"longitude": "longitude",
+		"sizeSettings": "FailureCount",
+		"sizeAggregation": "Sum",
+		"opacity": 0.8,
+		"labelSettings": "friendly_location",
+		"legendMetric": "FailureCount",
+		"legendAggregation": "Sum",
+		"itemColorSettings": {
+		"nodeColorField": "FailureCount",
+		"colorAggregation": "Sum",
+		"type": "heatmap",
+		"heatmapPalette": "greenRed"
+		}
+	}
+	},
+	"name": "query - 0"
+}
+```
+
+> This will parse through the failed RDP’s logs and return to us location information through our custom fields we created.
+
+![](Images/19_AddQuery.png)
+
+## Step 14: Finish/save threat visualization
+- Hit > save and close
+-	Hit the floppy disk at the top to save the map.
+-	Title: VM Attack Map > Location: (US) East US -> Resource group: Honeypot-RG -> click Apply
+-	And we’re done! - by now people should be attacking your VM, congrats!
+-	You can hit the refresh icon near the top of the map to load more logs into the map
+-	Also, you can click Auto refresh ON to refresh every so often.
+
+![](Images/20_ViewAttackMap.png)
+
+![](Images/21_AttackMap2.png)
 
 > Quick explanation of script: the script will parse through the security event logs (Audit Failure/failed login logs we looked at earlier) and grab IP information. The script then **passes** the IP thorough the API and correlates the info into longitude and latitude, giving us specific geographical information. 
 
-## Step 11B: Powershell script (cont.)
-- Test and run the script pass pressing green play button at top of window 
-- You should receive purple logs indicating latitude / latitude of failed logins (some sample logs and some log when we failed to log in)
-> NOTE: Keep Powershell script running in the backgroup. We need to continously feed our log repository information.
+## Step 15: Deprovision resources
+- Look for "Resource groups" -> name of resource group
+-	Key in the name of the resource group (Honeypot-RG) to verify removal of resources
+-	Select the Apply force delete for selected Virtual machines and Virtual machine scale sets box
+-	Click Delete
 
 ![](images/S11B.png)
 
@@ -170,150 +245,4 @@
 - Search and click Log Analytics Workspace > law-honeypot1 > custom logs > + Add custom log
 - We need to upload a sample log to “train” log analytics on what to look for.
 
-![](images/S12A.png)
-
-## Step 12B: Custom geolocation log (cont.)
-- Our sample logs are in our **honeypot-vm**.
-- **In our honeypot-vm**, search RUN > search C:\ProgramData\ and open the failed_rdp file.
-- Our failed RDP logins are sent to this txt file, open and copy all the sample logs. 
-- Back on our **host machine**, open notes and paste our sample logs.
-- Save the file in a log or txt format and upload it in the *Create a custom log* page. Click next and you should see the sample logs.
-
-![](images/S12B.png)
-
-## Step 12C: Click next and under Collection Paths > under Type > Windows, under Path write C:\ProgramData\failed_rdp.log
-
-![](images/S12C.png)
-
-## Step 12D: Click next > under Details > Custom log name write FAILED_RDP_WITH_GEO (CL will be added to the end)
-- Click next > Create >Review + Create
-- Let’s go back to log analytics and check if Azure is connected and listening to our vm.
-
-![](images/S12E.png)
-
-## Step 12E: Secure connection between honeypot-vm and log analytics 
-- Under law-honeypot1 > General > Logs > search SecurityEvent and click blue Run button.
-- Give it a moment, and voila! It returns the same security logs window from our honeypot-vm’s Event Viewer.
-- Give it some time and search our custom: `FAILED_RDP_WITH_GEO_CL will` it will return our sample logs.
-
-![](images/S12F.png)
- 
-## Step 13A: Overview: Extract geo-data from the RawData of our sample logs.
-- Take a look at our sample logs in our FAILED_RDP_WITH_GEO_CL.
-- In the RawData columns we find information like longitude, latitude, destination host, etc.
-- We need to categorize longitude, latitude, destination host, etc. **values** from the raw data before we can obtain  geolocation data.
-- It sounds a bit abstract now, but bare with me.
-> NOTE: If you step away and come back to this lab after a day or two make sure to change the *Time range* accordingly. 
-
-![](images/S13A.png)
-
-## Step 13B: Extract and categorize data from sample log
-- Right-click the first log you see in the search results and click Extract Fields from FAILED_RDP_WITH_GEO_CL
-- Under Main Example highlight the latitude VALUE - not the word ‘latitude’ itself
-- A window will automatically pop-up
-- Under Field value type latitude and under Filed type choose numeric, click Extract
-- To the right, check that the SIEM is selecting the correct values on each sample log.
-- Click save extraction. 
-
-![](images/S13B.png)
-
-> This is an important step because we are ‘training’ our SIEM what to look out for. 
-
-## Step 13C: Extracting more data from sample log
-- Same process, different values.
-- Right-click the same log > Extract files from… 
-- Now this time highlight *longitude value*
-- Field value: longitude > filed type: numeric, click Extract
-- Inside our search results it looks like our SIEM needs some help because it highlighted latitude when we were asking for LONGITUDE (bad siem).
-- Worry not: this is where some corrective training comes into play.
-- Click the little pencil within a circle icon at the top-right of the incorrect search result.
-- Click modify this highlight and highlight the **longitude** value once more.
-- Again: Field value: longitude > filed type: numeric, click Extract
-- Take a look at the search result, it should now highlight the correct longitude value.
-- Continue to train our SIEM and correct a few more search results.
-
-![](images/S13C.png)
-
-## Step 13D: Even more data extraction from sample log!
-- The same process to when we extracted latitude and longitude values.
-- Remember to highlight the *vaules* and to select the correct field value and field type
-- Right-click the same log > Extract files from… 
-- Highlight destination host value > filed title: destinationhost > type: text 
-- Re-select vales if needed and save
-- Remember to save after each selection - you can’t select more than one value at a time
-- Highlight user name value > filed title: username > type: text 
-- Highlight source host value > filed title: sourcehost > type: text 
-- Highlight state value > filed title: state > type: text 
-- Highlight country value > filed title: country > type: text 
-- Highlight label value > filed title: label > type: text 
-- Highlight timestamp value > filed title: timestamp > type: Date/Time
-- Hit save extraction for the final time and we’re done extracting!
-- Under setting columns to the left click Custom Logs > Custom fields
-- Your custom fields we just made should look something like this:
-
-![](images/S13D.png)
-
-> A couple of notes before moving on: **make sure our Powershell script log_exporter.log is running**. The script will continue to feed our SIEM with fresh new logs. 
-
-> After extracting the data from our logs, you may or may not already see people trying to RDP into our vm (!). Give it some time.
-
-## Step 14A : Set up our map within Microsoft Sentinel 
-- Next, we will map out our logs within Sentinel with the extracted data - to see where in the world is our vm is being attacked from.
-- Search and click Microsoft Sentinel > choose law-honeypot1 and under Threat management choose *Workbooks* > click + Add workbook
-- Click edit > click the “ … “ on the right side on the screen and remove the two widgets.
-- Click Add > Add query and paste the following into the query:
-
-`FAILED_RDP_WITH_GEO_CL | summarize event_count=count() by sourcehost_CF, latitude_CF, longitude_CF, country_CF, label_CF, destinationhost_CF
-| where destinationhost_CF != "samplehost"
-| where sourcehost_CF != ""`
-
-![](images/S14A.png)
-
-> This will parse through the failed RDP’s logs and return to us location information through our custom fields we created.
-
-> The last two lines will ensure we DON’T receive anything with sample host or anything blank.
-
-## Step 14B: Threat visualization
-- Click Run Query
-- Troubleshooting: if you run into any issue with a CF (custom field) try removing the troubling CF from the query and run search again.
-- From the visualization drop box select *Map*
-- In map settings > layout setting (on the right of screen):
-- Under Location Info Using Select longitude/latitude (if longitude/latitude gives you trouble select *country or region*, and vice versa)
-- Under latitude: latitude_CF
-- Under longitude: longitude_CF
-- Scroll down to find Metric Settings:
-- Under Metric Label select label_CF
-- Metric Value: event_count
-- Hit Apply …
-- On the map you see where you’re being attacked from!
-- You might only see the failed logins you made, but after some time refresh and look again.
-- Pretty rad - **if you take a look at the actual logs you can see source IP, time, country, user name and other details!**
-- Remember too, these logs are only reporting back failed RDP attempts… who knows what other attacks are being attempted.  
-
-![](images/S14B.png)
-
-## Step 14C: Finish/save threat visualization 
-- Hit > save and close
-- Hit the floppy disk at the top to save the map.
-- Title: Failed RDP World Map > Location: West US 2 > Resource group: honeypot-lab > click Apply
-- And we’re done! - by now people should be attacking your vm, congrats!
-- You can hit the refresh icon near the top of the map (**make sure Powershell script is running**) to load more logs into the map
-- Also, you can click Auto refresh ON to refresh every so often.
-
-![](images/S14C.png)
-
-## FINAL STEP: Deprovision resources 
-- Once you are done with the lab delete the resources, otherwise they will eat away from your free credit (deprovisioning is also a good thing to keep in mind at the enterprise level)
-- Search and click Resource group > honeypot-lab > Delete resource group
-- Type the name  *honeypot-lab* to confirm deletion 
-
-![](images/AzureMmap.png)
-
-> And there you have it, you have successfully mapped out the location of your RDP attackers using a honey pot vm.
-
-
-
-
-
-
-
+![](Images/22_DeleteResourceGroup.png)
