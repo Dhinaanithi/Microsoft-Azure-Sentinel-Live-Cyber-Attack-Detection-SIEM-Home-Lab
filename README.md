@@ -75,7 +75,9 @@ In this guide, we’ll show you how to build and use a fun and educational cyber
 
 ## Step 6: Log into VM through host machine
 - Through the search bar, find our My-Virtual-Machine > copy the Public IP address (highlighted here on the right)
+  
 ![](Images/6_GetPublicIPAddress.png)
+
 - On your Windows machine search and open Remote Desktop Connection
 -	Paste your Azure IP into Computer
 -	Then, enter your credentials we created for our Azure VM in Step 3, click OK.
